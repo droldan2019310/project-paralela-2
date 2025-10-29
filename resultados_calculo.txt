@@ -1,0 +1,18 @@
+% Resultados experimentales para el informe
+% Experimento 1: Llave fácil (10000)
+T_seq_easy = 0.006758 s
+T_par_2_easy = 0.006287 s  
+T_par_4_easy = 0.007452 s
+Speedup_2_easy = 0.006758 / 0.006287 = 1.075
+Speedup_4_easy = 0.006758 / 0.007452 = 0.907
+Eficiencia_2_easy = 1.075 / 2 = 0.537 = 53.7%
+Eficiencia_4_easy = 0.907 / 4 = 0.227 = 22.7%
+
+% Experimento 2: Llave media (500000)  
+T_seq_medium = 0.033516 s
+T_par_2_medium = 0.034659 s
+T_par_4_medium = 0.017648 s
+Speedup_2_medium = 0.033516 / 0.034659 = 0.967
+Speedup_4_medium = 0.033516 / 0.017648 = 1.899
+Eficiencia_2_medium = 0.967 / 2 = 0.484 = 48.4%
+Eficiencia_4_medium = 1.899 / 4 = 0.475 = 47.5%

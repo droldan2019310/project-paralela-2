@@ -1,0 +1,18 @@
+% Resultados adicionales - Llave tardía
+% Experimento 3: Llave tardía (900000) - rango [850000, 950000]
+T_seq_hard = 0.032626 s
+T_par_2_hard = 0.037269 s  
+T_par_4_hard = 0.018315 s
+Speedup_2_hard = 0.032626 / 0.037269 = 0.875
+Speedup_4_hard = 0.032626 / 0.018315 = 1.781
+Eficiencia_2_hard = 0.875 / 2 = 0.438 = 43.8%
+Eficiencia_4_hard = 1.781 / 4 = 0.445 = 44.5%
+
+% Experimento 4: Rango amplio [800000, 1000000]
+T_seq_wide = 0.022005 s
+T_par_4_wide = 0.034630 s
+Speedup_4_wide = 0.022005 / 0.034630 = 0.635
+Eficiencia_4_wide = 0.635 / 4 = 0.159 = 15.9%
+
+Nota: En el experimento 4, la llave se encontró más temprano de lo esperado (834208), 
+lo que explica el speedup subunitario.

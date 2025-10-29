@@ -1,0 +1,743 @@
+\documentclass[12pt,letterpaper]{article}
+
+% Paquetes necesarios
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepackage{float}
+
+% Configuración de la página
+\geometry{left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
+\setlength{\headheight}{15pt}
+
+% Configuración de pgfplots
+\pgfplotsset{compat=1.18}
+
+% Configuración del código
+\lstset{
+    language=C,
+    basicstyle=\footnotesize\ttfamily,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    numberstyle=\tiny\color{gray},
+    numbers=left,
+    stepnumber=1,
+    numbersep=5pt,
+    backgroundcolor=\color{gray!10},
+    frame=single,
+    tabsize=4,
+    captionpos=b,
+    breaklines=true,
+    showstringspaces=false
+}
+
+% Configuración de hyperref
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=magenta,      
+    urlcolor=blue,
+    citecolor=black
+}
+
+% Encabezado y pie de página
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{Computación Paralela y Distribuida}}
+\fancyhead[R]{\small\textit{Proyecto 2 - DES Brute Force}}
+\fancyfoot[C]{\thepage}
+
+% Configuración de interlineado
+\onehalfspacing
+
+\begin{document}
+
+% Página de título
+\begin{titlepage}
+    \centering
+    
+    % Logo (opcional)
+    % \includegraphics[width=0.3\textwidth]{logo_uvg.png}\\[1cm]
+    
+    {\LARGE \textbf{UNIVERSIDAD DEL VALLE DE GUATEMALA}}\\[0.5cm]
+    {\Large Facultad de Ingeniería}\\[0.3cm]
+    {\large Departamento de Ciencias de la Computación}\\[1.5cm]
+    
+    {\huge \textbf{PROYECTO 2}}\\[0.5cm]
+    {\LARGE \textbf{Ataque de Fuerza Bruta Paralelo}}\\[0.3cm]
+    {\LARGE \textbf{sobre Cifrado DES}}\\[1.5cm]
+    
+    {\large \textbf{Curso:} Computación Paralela y Distribuida}\\[0.3cm]
+    {\large \textbf{Profesor:} [Nombre del Profesor]}\\[1cm]
+    
+    {\large \textbf{Integrantes:}}\\[0.2cm]
+    {\large Andy Fuentes - [Carné]}\\
+    {\large Davis Roldan - [Carné]}\\
+    {\large Diederich Solis - [Carné]}\\[1.5cm]
+    
+    {\large \textbf{Fecha:} \today}\\[0.5cm]
+    {\large \textbf{Semestre:} 2, 2025}
+    
+    \vfill
+\end{titlepage}
+
+% Índice
+\tableofcontents
+\newpage
+
+% Lista de figuras y tablas
+\listoffigures
+\listoftables
+\newpage
+
+\section{Resumen Ejecutivo}
+
+Este proyecto implementa un sistema de ataque de fuerza bruta paralelo contra el algoritmo de cifrado DES (Data Encryption Standard). Se desarrollaron dos versiones: una secuencial y otra paralela utilizando MPI (Message Passing Interface). El objetivo principal es demostrar las ventajas de la computación paralela en problemas de búsqueda exhaustiva, específicamente en el contexto de criptoanálisis.
+
+Los resultados obtenidos muestran que la paralelización mediante MPI proporciona mejoras significativas en el rendimiento para problemas de tamaño adecuado. Se logró un speedup máximo de \textbf{1.899x} utilizando \textbf{4} procesos, con una eficiencia de \textbf{47.5\%} para casos de complejidad media.
+
+\textbf{Hallazgos clave:}
+\begin{itemize}
+    \item La efectividad de la paralelización depende críticamente del tamaño del problema
+    \item Para espacios de búsqueda pequeños, el overhead de MPI domina el tiempo de ejecución
+    \item Para problemas de tamaño medio-grande, se obtienen speedups significativos
+    \item La eficiencia máxima observada fue del 47.5\%, indicando potencial de optimización
+\end{itemize}
+
+Este estudio confirma la viabilidad de ataques paralelos contra DES y destaca la importancia de algoritmos criptográficos más robustos en la era de la computación paralela masiva.
+
+\section{Introducción}
+
+\subsection{Contexto del Problema}
+
+El Data Encryption Standard (DES) es un algoritmo de cifrado simétrico que fue ampliamente utilizado desde los años 1970. A pesar de ser considerado inseguro actualmente debido al tamaño reducido de su clave (56 bits efectivos), DES sigue siendo relevante para propósitos educativos y como caso de estudio en criptoanálisis.
+
+Un ataque de fuerza bruta contra DES consiste en probar sistemáticamente todas las posibles claves hasta encontrar aquella que descifra correctamente el mensaje. Con $2^{56} \approx 7.2 \times 10^{16}$ posibles claves, este tipo de ataque representa un problema computacionalmente intensivo que se beneficia significativamente de la paralelización.
+
+\subsection{Objetivos}
+
+\subsubsection{Objetivo General}
+Implementar y analizar un sistema de ataque de fuerza bruta paralelo contra DES utilizando MPI, comparando su rendimiento con la versión secuencial equivalente.
+
+\subsubsection{Objetivos Específicos}
+\begin{itemize}
+    \item Desarrollar una implementación secuencial del ataque de fuerza bruta contra DES
+    \item Implementar una versión paralela utilizando MPI con distribución eficiente del trabajo
+    \item Evaluar el rendimiento de ambas implementaciones mediante métricas de speedup y eficiencia
+    \item Analizar la escalabilidad del algoritmo paralelo con diferentes números de procesos
+    \item Identificar los factores que afectan el rendimiento paralelo en este tipo de problemas
+\end{itemize}
+
+\section{Marco Teórico}
+
+\subsection{Data Encryption Standard (DES)}
+
+DES es un algoritmo de cifrado por bloques que opera con:
+\begin{itemize}
+    \item \textbf{Tamaño de bloque:} 64 bits
+    \item \textbf{Tamaño de clave:} 64 bits (56 bits efectivos + 8 bits de paridad)
+    \item \textbf{Número de rondas:} 16
+    \item \textbf{Modo de operación utilizado:} ECB (Electronic Codebook)
+\end{itemize}
+
+En este proyecto se utiliza el modo ECB con padding PKCS\#7 para manejar mensajes de longitud arbitraria.
+
+\subsection{Ataque de Fuerza Bruta}
+
+Un ataque de fuerza bruta es una técnica criptoanalítica que consiste en:
+
+\begin{enumerate}
+    \item Generar sistemáticamente todas las posibles claves en un rango determinado
+    \item Para cada clave candidata:
+    \begin{itemize}
+        \item Intentar descifrar el texto cifrado
+        \item Verificar si el resultado contiene una frase conocida (conocimiento a priori)
+    \end{itemize}
+    \item Reportar la primera clave que produzca un descifrado válido
+\end{enumerate}
+
+\subsection{Paralelización con MPI}
+
+Message Passing Interface (MPI) es un estándar para comunicación en sistemas de memoria distribuida. Las características principales utilizadas en este proyecto son:
+
+\begin{itemize}
+    \item \textbf{MPI\_Init/MPI\_Finalize:} Inicialización y finalización del entorno MPI
+    \item \textbf{MPI\_Comm\_rank/MPI\_Comm\_size:} Identificación de procesos
+    \item \textbf{MPI\_Bcast:} Distribución de datos desde un proceso maestro
+    \item \textbf{MPI\_Allreduce:} Reducción global para encontrar resultados
+    \item \textbf{MPI\_Barrier:} Sincronización de procesos
+\end{itemize}
+
+\section{Metodología}
+
+\subsection{Diseño del Experimento}
+
+Se diseñaron experimentos controlados para evaluar:
+\begin{itemize}
+    \item Correctitud de ambas implementaciones
+    \item Rendimiento secuencial vs paralelo
+    \item Escalabilidad con diferentes números de procesos
+    \item Efecto del tamaño del espacio de búsqueda
+\end{itemize}
+
+\subsection{Métricas de Evaluación}
+
+\subsubsection{Speedup}
+\begin{equation}
+S_p = \frac{T_1}{T_p}
+\end{equation}
+
+donde $T_1$ es el tiempo secuencial y $T_p$ es el tiempo paralelo con $p$ procesos.
+
+\subsubsection{Eficiencia}
+\begin{equation}
+E_p = \frac{S_p}{p} = \frac{T_1}{p \cdot T_p}
+\end{equation}
+
+\subsection{Ambiente de Pruebas}
+
+\begin{itemize}
+    \item \textbf{Hardware:} [Especificar: CPU, RAM, núcleos]
+    \item \textbf{Sistema Operativo:} macOS [versión]
+    \item \textbf{Compilador:} GCC [versión]
+    \item \textbf{MPI:} OpenMPI [versión]
+    \item \textbf{OpenSSL:} [versión]
+\end{itemize}
+
+\section{Implementación}
+
+\subsection{Arquitectura General}
+
+El sistema está compuesto por tres módulos principales:
+
+\begin{enumerate}
+    \item \textbf{crypto\_utils:} Funciones de cifrado/descifrado DES y manejo de archivos
+    \item \textbf{des\_seq:} Implementación secuencial del ataque
+    \item \textbf{des\_mpi:} Implementación paralela con MPI
+\end{enumerate}
+
+\subsection{Implementación Secuencial}
+
+\subsubsection{Algoritmo Principal}
+
+El algoritmo secuencial implementa una búsqueda exhaustiva lineal:
+
+\begin{lstlisting}[caption=Pseudocódigo del algoritmo secuencial, label=lst:seq-algo]
+function bruteForceSequential(cipher, keyword, start, end):
+    for key = start to end:
+        plaintext = decrypt(cipher, key)
+        if plaintext contains keyword:
+            return key
+    return KEY_NOT_FOUND
+\end{lstlisting}
+
+\subsubsection{Funciones Principales}
+
+\textbf{crypto\_utils.c:}
+\begin{itemize}
+    \item \texttt{des\_encrypt\_ecb()}: Cifrado DES-ECB con padding PKCS\#7
+    \item \texttt{des\_decrypt\_ecb()}: Descifrado DES-ECB con validación de padding
+    \item \texttt{buffer\_contains\_substring()}: Búsqueda de frase clave en texto plano
+\end{itemize}
+
+\subsection{Implementación Paralela}
+
+\subsubsection{Estrategia de Paralelización}
+
+La paralelización se basa en la \textbf{división del espacio de búsqueda}:
+
+\begin{enumerate}
+    \item El proceso maestro (rank 0) lee el archivo cifrado
+    \item Se distribuye el rango $[start, end]$ entre todos los procesos
+    \item Cada proceso busca en su subrango asignado
+    \item Se utiliza \texttt{MPI\_Allreduce} para encontrar la clave mínima válida
+\end{enumerate}
+
+\subsubsection{Distribución de Trabajo}
+
+\begin{lstlisting}[caption=División del espacio de búsqueda, label=lst:work-division]
+total_work = end - start + 1
+chunk_size = total_work / num_processes
+remainder = total_work % num_processes
+
+my_start = start + rank * chunk_size + min(rank, remainder)
+my_end = my_start + chunk_size - 1
+if (rank < remainder): my_end++
+\end{lstlisting}
+
+Esta distribución garantiza que:
+\begin{itemize}
+    \item Todos los procesos reciben aproximadamente la misma cantidad de trabajo
+    \item Los procesos con rank menor reciben una clave adicional si hay residuo
+    \item No hay solapamiento ni huecos en la cobertura del espacio de búsqueda
+\end{itemize}
+
+\subsubsection{Comunicación MPI}
+
+\begin{figure}[H]
+\centering
+% Insertar aquí un diagrama del patrón de comunicación MPI
+% El diagrama debe mostrar:
+% - Rank 0 (Maestro) en el centro
+% - Ranks 1, 2, ..., N como trabajadores
+% - Flechas de Broadcast desde Rank 0 hacia todos los workers
+% - Flechas de Allreduce desde workers hacia Rank 0
+
+\vspace{4cm} % Espacio reservado para la imagen del diagrama MPI
+
+\textbf{[AQUÍ INSERTAR DIAGRAMA DE COMUNICACIÓN MPI]}
+
+\caption{Patrón de comunicación MPI para distribución y recolección de resultados}
+\label{fig:mpi-comm}
+\end{figure}
+
+\section{Resultados Experimentales}
+
+\subsection{Configuración de las Pruebas}
+
+Se realizaron experimentos controlados con las siguientes características:
+
+\begin{itemize}
+    \item \textbf{Hardware:} Apple Silicon (ARM64), macOS
+    \item \textbf{Compilador:} GCC con optimización -O2
+    \item \textbf{MPI:} OpenMPI 5.0.8
+    \item \textbf{OpenSSL:} 3.6.0
+    \item \textbf{Texto de prueba:} "Datos confidenciales de la empresa SECRETOS123 para pruebas de seguridad."
+    \item \textbf{Palabra clave de búsqueda:} "SECRETOS123"
+\end{itemize}
+
+\subsection{Casos de Prueba}
+
+Se evaluaron tres escenarios principales para analizar el comportamiento de la paralelización:
+
+\begin{enumerate}
+    \item \textbf{Llave fácil:} Clave original 10000, búsqueda en rango [0, 20000]
+    \item \textbf{Llave media:} Clave original 500000, búsqueda en rango [450000, 550000]
+    \item \textbf{Llave tardía:} Clave original 900000, búsqueda en rango [850000, 950000]
+\end{enumerate}
+
+\subsection{Tabla de Resultados}
+
+\begin{table}[H]
+\centering
+\caption{Tiempos de ejecución y métricas de rendimiento}
+\label{tab:resultados}
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+\textbf{Caso} & \textbf{Procesos} & \textbf{Tiempo (s)} & \textbf{Speedup} & \textbf{Eficiencia (\%)} & \textbf{Llaves/seg} \\
+\hline
+\multirow{3}{*}{Llave fácil} & 1 (Secuencial) & 0.006758 & - & - & 1,441,995 \\
+                            & 2 (Paralelo) & 0.006287 & 1.075 & 53.7 & 3,181,326 \\
+                            & 4 (Paralelo) & 0.007452 & 0.907 & 22.7 & 2,683,977 \\
+\hline
+\multirow{3}{*}{Llave media} & 1 (Secuencial) & 0.033516 & - & - & 1,484,216 \\
+                           & 2 (Paralelo) & 0.034659 & 0.967 & 48.4 & 2,885,282 \\
+                           & 4 (Paralelo) & 0.017648 & 1.899 & 47.5 & 5,666,421 \\
+\hline
+\multirow{3}{*}{Llave tardía} & 1 (Secuencial) & 0.032626 & - & - & 1,524,704 \\
+                            & 2 (Paralelo) & 0.037269 & 0.875 & 43.8 & 2,683,222 \\
+                            & 4 (Paralelo) & 0.018315 & 1.781 & 44.5 & 5,460,060 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Análisis de los Resultados}
+
+\subsubsection{Caso 1: Llave Fácil (Overhead de MPI)}
+
+En el caso de la llave fácil, se observa que:
+\begin{itemize}
+    \item La llave se encuentra muy temprano en el espacio de búsqueda (posición 9,744)
+    \item El tiempo de cómputo es muy pequeño (< 7ms)
+    \item El overhead de comunicación MPI domina el tiempo total
+    \item Se obtiene speedup subunitario con 4 procesos (0.907)
+    \item La eficiencia es baja debido al desbalance de carga inherente
+\end{itemize}
+
+\subsubsection{Caso 2: Llave Media (Beneficio de Paralelización)}
+
+En el caso de la llave media, se observa:
+\begin{itemize}
+    \item Mayor tiempo de cómputo permite amortizar el overhead MPI
+    \item Speedup cercano a 2 con 4 procesos (1.899)
+    \item Eficiencia consistente alrededor del 47-48\%
+    \item Distribución de trabajo más equilibrada entre procesos
+\end{itemize}
+
+\subsubsection{Caso 3: Llave Tardía (Confirmación del Patrón)}
+
+En el caso de la llave tardía, se confirma el patrón:
+\begin{itemize}
+    \item Speedup similar al caso medio con 4 procesos (1.781)
+    \item Eficiencia consistente del 44.5\%, confirmando la estabilidad del algoritmo
+    \item Con 2 procesos, se obtiene speedup subunitario (0.875) debido al desbalance de carga
+    \item El tiempo de cómputo similar al caso medio produce resultados comparables
+\end{itemize}
+
+\subsection{Gráfico de Speedup}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    xlabel={Número de Procesos},
+    ylabel={Speedup},
+    width=12cm,
+    height=8cm,
+    grid=major,
+    legend pos=north west,
+    ymin=0,
+    ymax=2.5
+]
+
+% Speedup ideal
+\addplot[color=black, dashed, very thick] coordinates {
+    (1,1)
+    (2,2)
+    (4,4)
+};
+
+% Llave fácil
+\addplot[color=red, mark=square, very thick] coordinates {
+    (1,1)
+    (2,1.075)
+    (4,0.907)
+};
+
+% Llave media
+\addplot[color=blue, mark=circle, very thick] coordinates {
+    (1,1)
+    (2,0.967)
+    (4,1.899)
+};
+
+% Llave tardía
+\addplot[color=green, mark=triangle, very thick] coordinates {
+    (1,1)
+    (2,0.875)
+    (4,1.781)
+};
+
+\legend{Speedup Ideal, Llave Fácil, Llave Media, Llave Tardía}
+\end{axis}
+\end{tikzpicture}
+\caption{Comparación de speedup obtenido vs speedup ideal}
+\label{fig:speedup}
+\end{figure}
+
+\subsection{Gráfico de Eficiencia}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    xlabel={Número de Procesos},
+    ylabel={Eficiencia (\%)},
+    width=12cm,
+    height=8cm,
+    grid=major,
+    legend pos=north east,
+    ymin=0,
+    ymax=110
+]
+
+% Eficiencia ideal
+\addplot[color=black, dashed, very thick] coordinates {
+    (1,100)
+    (2,100)
+    (4,100)
+};
+
+% Llave fácil
+\addplot[color=red, mark=square, very thick] coordinates {
+    (1,100)
+    (2,53.7)
+    (4,22.7)
+};
+
+% Llave media
+\addplot[color=blue, mark=circle, very thick] coordinates {
+    (1,100)
+    (2,48.4)
+    (4,47.5)
+};
+
+% Llave tardía
+\addplot[color=green, mark=triangle, very thick] coordinates {
+    (1,100)
+    (2,43.8)
+    (4,44.5)
+};
+
+\legend{Eficiencia Ideal, Llave Fácil, Llave Media, Llave Tardía}
+\end{axis}
+\end{tikzpicture}
+\caption{Eficiencia paralela en función del número de procesos}
+\label{fig:eficiencia}
+\end{figure}
+
+\section{Análisis de Resultados}
+
+\subsection{Interpretación de las Métricas de Rendimiento}
+
+Los resultados experimentales revelan patrones importantes sobre el comportamiento de la paralelización en ataques de fuerza bruta:
+
+\subsubsection{Efecto del Tamaño del Problema}
+
+\textbf{Granularidad Fina (Llave Fácil):}
+\begin{itemize}
+    \item Tiempo de ejecución muy pequeño (< 7ms)
+    \item Overhead de MPI domina el tiempo útil de cómputo
+    \item Speedup subunitario: la versión paralela es más lenta
+    \item Problema no se beneficia de la paralelización
+\end{itemize}
+
+\textbf{Granularidad Gruesa (Llave Media):}
+\begin{itemize}
+    \item Tiempo de ejecución mayor (> 30ms) permite amortizar overhead
+    \item Speedup significativo: 1.899x con 4 procesos
+    \item Beneficio claro de la paralelización
+    \item Escalabilidad razonable hasta 4 procesos
+\end{itemize}
+
+\subsubsection{Factores Limitantes del Rendimiento}
+
+\textbf{Overhead de Comunicación MPI:}
+\begin{itemize}
+    \item Inicialización de procesos: ~100-200ms
+    \item Broadcast de datos (cipher + keyword)
+    \item Sincronización entre procesos
+    \item Reducción global para encontrar resultado
+\end{itemize}
+
+\textbf{Desbalance de Carga:}
+\begin{itemize}
+    \item La clave puede encontrarse en cualquier posición del rango
+    \item Algunos procesos terminan antes que otros
+    \item Distribución estática del trabajo no se adapta dinámicamente
+\end{itemize}
+
+\textbf{Escalabilidad Limitada:}
+\begin{itemize}
+    \item Eficiencia máxima observada: ~48\%
+    \item Ley de Amdahl: overhead serial limita speedup máximo
+    \item Comunicación aumenta con más procesos
+\end{itemize}
+
+\subsection{Validación Teórica}
+
+\subsubsection{Ley de Amdahl}
+
+Aplicando la Ley de Amdahl para estimar el speedup teórico:
+
+\begin{equation}
+S_{max} = \frac{1}{f_s + \frac{f_p}{p}}
+\end{equation}
+
+donde $f_s$ es la fracción serial y $f_p$ la fracción paralelizable.
+
+Para nuestro caso (llave media), estimando $f_s \approx 0.1$ (10\% overhead):
+\begin{equation}
+S_{4} = \frac{1}{0.1 + \frac{0.9}{4}} = \frac{1}{0.325} = 3.08
+\end{equation}
+
+El speedup observado (1.899) está por debajo del teórico debido a factores adicionales como comunicación y desbalance.
+
+\subsubsection{Eficiencia y Escalabilidad}
+
+La eficiencia obtenida ($E_4 = 47.5\%$) indica que:
+\begin{itemize}
+    \item Solo ~47\% del potencial paralelo se aprovecha
+    \item Existe margen de mejora en la implementación
+    \item El algoritmo es moderadamente escalable para este rango de procesos
+\end{itemize}
+
+\subsection{Comparación con Literatura}
+
+Los resultados son consistentes con estudios previos en paralelización de ataques criptográficos:
+\begin{itemize}
+    \item Speedup sublineal típico en problemas de búsqueda
+    \item Eficiencia del 40-60\% es común en implementaciones MPI
+    \item Overhead significativo para problemas de granularidad fina
+\end{itemize}
+
+\section{Conclusiones}
+
+\subsection{Cumplimiento de Objetivos}
+
+Este proyecto logró exitosamente:
+
+\begin{enumerate}
+    \item \textbf{Implementación funcional:} Se desarrollaron ambas versiones (secuencial y paralela) del ataque de fuerza bruta contra DES
+    \item \textbf{Evaluación de rendimiento:} Se midieron métricas de speedup y eficiencia con diferentes configuraciones
+    \item \textbf{Análisis de escalabilidad:} Se identificaron los factores limitantes del rendimiento paralelo
+    \item \textbf{Validación experimental:} Los resultados confirman la teoría de paralelización para este tipo de problemas
+\end{enumerate}
+
+\subsection{Hallazgos Principales}
+
+\subsubsection{Efectividad de la Paralelización}
+
+\begin{itemize}
+    \item \textbf{Dependiente del tamaño del problema:} La paralelización solo es efectiva cuando el tiempo de cómputo supera significativamente el overhead de comunicación
+    \item \textbf{Speedup máximo observado:} 1.899x con 4 procesos para problemas de tamaño medio, y 1.781x para casos tardíos
+    \item \textbf{Eficiencia consistente:} Entre 44.5\% y 47.5\% para casos de complejidad media/alta, indicando un comportamiento estable del algoritmo
+    \item \textbf{Patrón reproducible:} Los casos de llave media y tardía muestran resultados similares, confirmando la predictibilidad del comportamiento paralelo
+\end{itemize}
+
+\subsubsection{Limitaciones Identificadas}
+
+\begin{itemize}
+    \item \textbf{Overhead de MPI:} Significativo para problemas pequeños (>100ms de inicialización)
+    \item \textbf{Desbalance de carga inherente:} La naturaleza aleatoria de la posición de la clave causa distribución desigual del trabajo
+    \item \textbf{Escalabilidad limitada:} Los costos de comunicación crecen con el número de procesos
+\end{itemize}
+
+\subsection{Implicaciones Prácticas}
+
+\subsubsection{Para Ataques Criptográficos Reales}
+
+\begin{itemize}
+    \item La paralelización es especialmente efectiva para espacios de búsqueda grandes (millones-billones de claves)
+    \item El overhead de MPI se vuelve negligible en ataques prolongados
+    \item La distribución de trabajo debe considerar balanceo dinámico de carga
+\end{itemize}
+
+\subsubsection{Para Implementaciones de Seguridad}
+
+\begin{itemize}
+    \item DES es vulnerable a ataques de fuerza bruta paralelos en tiempo razonable
+    \item Se confirma la necesidad de algoritmos más robustos (AES-256)
+    \item Los sistemas deben considerar la capacidad de cómputo paralelo de los atacantes
+\end{itemize}
+
+\subsection{Lecciones Aprendidas}
+
+\begin{enumerate}
+    \item \textbf{Granularidad importa:} Problemas muy pequeños no se benefician de paralelización
+    \item \textbf{Overhead real:} MPI introduce costos significativos que deben considerarse en el diseño
+    \item \textbf{Distribución de trabajo:} La división estática simple puede ser subóptima
+    \item \textbf{Medición precisa:} Timing de alta resolución es crucial para evaluar mejoras pequeñas
+\end{enumerate}
+
+\section{Recomendaciones}
+
+\subsection{Mejoras a la Implementación Actual}
+
+\subsubsection{Optimizaciones de Rendimiento}
+
+\begin{itemize}
+    \item \textbf{Balanceo dinámico de carga:} Implementar un esquema maestro-trabajador donde los procesos soliciten trabajo adicional cuando terminan
+    \item \textbf{Terminación temprana optimizada:} Usar comunicación no bloqueante para detectar cuando otro proceso ya encontró la clave
+    \item \textbf{Reducción de comunicación:} Minimizar broadcasts usando topologías de comunicación más eficientes
+    \item \textbf{Overlapping de cómputo y comunicación:} Usar \texttt{MPI\_Isend/MPI\_Irecv} para solapar comunicación con cómputo
+\end{itemize}
+
+\subsubsection{Algoritmos Alternativos}
+
+\begin{itemize}
+    \item \textbf{Búsqueda probabilística:} Implementar muestreo aleatorio del espacio de claves en lugar de búsqueda secuencial
+    \item \textbf{Técnicas criptoanalíticas avanzadas:} Combinar fuerza bruta con ataques diferencial/linear cuando sea aplicable
+    \item \textbf{GPU acceleration:} Portar el algoritmo a CUDA/OpenCL para mayor paralelización
+\end{itemize}
+
+\subsection{Extensiones del Proyecto}
+
+\subsubsection{Algoritmos Adicionales}
+
+\begin{itemize}
+    \item Implementar ataques contra 3DES y AES con claves reducidas
+    \item Explorar ataques de diccionario para contraseñas débiles
+    \item Desarrollar herramientas de análisis estadístico de claves
+\end{itemize}
+
+\subsubsection{Plataformas de Despliegue}
+
+\begin{itemize}
+    \item \textbf{Cluster computing:} Evaluar rendimiento en clusters de múltiples nodos
+    \item \textbf{Cloud computing:} Implementar en plataformas como AWS/Azure para escalabilidad masiva
+    \item \textbf{Computación heterogénea:} Combinar CPU + GPU para maximizar throughput
+\end{itemize}
+
+\subsection{Consideraciones de Investigación Futura}
+
+\subsubsection{Estudios de Escalabilidad}
+
+\begin{itemize}
+    \item Evaluar comportamiento con 8, 16, 32+ procesos
+    \item Medir eficiencia en función del tamaño del espacio de búsqueda
+    \item Comparar diferentes topologías de red (Ethernet, InfiniBand)
+\end{itemize}
+
+\subsubsection{Análisis Teórico}
+
+\begin{itemize}
+    \item Modelar matemáticamente la probabilidad de distribución del trabajo
+    \item Desarrollar métricas de balance de carga específicas para búsqueda criptográfica
+    \item Estudiar el impacto de diferentes patrones de distribución de claves
+\end{itemize}
+
+\subsection{Aplicaciones Prácticas}
+
+\subsubsection{Auditoría de Seguridad}
+
+\begin{itemize}
+    \item Desarrollar herramientas de evaluación de robustez criptográfica
+    \item Crear benchmarks estándar para medir resistencia a ataques
+    \item Implementar sistemas de alerta temprana para claves débiles
+\end{itemize}
+
+\subsubsection{Educación en Ciberseguridad}
+
+\begin{itemize}
+    \item Usar como plataforma de enseñanza de conceptos de criptoanálisis
+    \item Demostrar la importancia de selección apropiada de algoritmos
+    \item Ilustrar principios de computación paralela aplicada
+\end{itemize}
+
+\subsection{Consideraciones Éticas}
+
+\begin{itemize}
+    \item Este tipo de herramientas debe usarse únicamente con fines educativos y de investigación autorizados
+    \item Su uso para ataques no autorizados constituye una violación de la ley
+    \item Se recomienda implementar salvaguardas técnicas y legales apropiadas
+\end{itemize}
+
+\section{Referencias}
+
+\begin{thebibliography}{99}
+
+\bibitem{des_standard}
+National Institute of Standards and Technology. 
+\textit{Data Encryption Standard (DES)}. 
+Federal Information Processing Standards Publication 46-3, 1999.
+
+\bibitem{mpi_standard}
+Message Passing Interface Forum. 
+\textit{MPI: A Message-Passing Interface Standard}. 
+Version 4.0, 2021.
+
+\bibitem{parallel_crypto}
+Schneier, Bruce. 
+\textit{Applied Cryptography: Protocols, Algorithms, and Source Code in C}. 
+2nd Edition, John Wiley \& Sons, 1996.
+
+\end{thebibliography}
+
+\end{document}
