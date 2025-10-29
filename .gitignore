@@ -1,0 +1,28 @@
+# Compilados
+*.o
+*.out
+*.bin
+*.exe
+*.txt~
+
+# Ejecutables del proyecto
+des_seq
+des_mpi
+
+# Archivos de cifrado / pruebas
+cipher*.bin
+recovered*.txt
+texto.txt
+*.key
+*.enc
+*.dec
+
+# Archivos temporales o logs
+*.log
+*.tmp
+
+# Archivos del sistema o editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
