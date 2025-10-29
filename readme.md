@@ -1,61 +1,104 @@
-# Proyecto 2 – DES Bruteforce (Secuencial y MPI)
+# 🔐 Proyecto 2 – DES Brute Force Paralelo
 
+**Universidad del Valle de Guatemala**  
+**Curso:** Computación Paralela y Distribuida  
+**Integrante:** Andy Fuentes , Davis Roldan y Diederich Solis 
+**Semestre:** 2, 2025
 
-## Requisitos
-- C / C++ (C estándar).
-- Open MPI (mpicc/mpirun instalados).
-- OpenSSL (libcrypto) para DES: `brew install openssl@3` en macOS.
+---
 
+## 📋 Descripción
 
-## Compilación
-# Usa pkg-config si está disponible; el Makefile intenta resolver rutas comunes.
+Sistema de cifrado DES con ataque de fuerza bruta en dos versiones:
+- **Secuencial** (`des_seq`): Búsqueda lineal
+- **Paralela** (`des_mpi`): Búsqueda distribuida con OpenMPI
+
+---
+
+## ⚙️ Compilación
+
+```bash
 make clean && make all
+```
 
+Genera:
+- `des_seq` → versión secuencial
+- `des_mpi` → versión paralela
 
-## Archivos de entrada/salida
-- Texto plano: archivo `.txt` (UTF-8).
-- Cifrado: archivo binario `.bin` producido por `encrypt`.
+---
 
+## 🚀 Uso
 
-## Ejemplos de uso
+### Cifrar
+```bash
+echo "Esta es una prueba paralela ABCXYZ123 para medir tiempos." > texto.txt
+./des_seq encrypt -i texto.txt -o cipher.bin -k 50000
+```
 
+### Descifrar
+```bash
+./des_seq decrypt -i cipher.bin -o recovered.txt -k 50000
+cat recovered.txt
+```
 
-### 1) Cifrar un texto de archivo con una llave dada (secuencial)
-# Llave (entero unsigned) p.ej. 42
-./des_seq encrypt -i texto.txt -o cipher.bin -k 42
+### Fuerza Bruta (Secuencial)
+```bash
+./des_seq bruteforce -i cipher.bin -kw "ABCXYZ123" -s 0 -e 1000000
+```
 
+### Fuerza Bruta (Paralela)
+```bash
+mpirun -np 4 ./des_mpi -i cipher.bin -kw "ABCXYZ123" -s 0 -e 1000000
+```
 
-### 2) Verificar descifrado con llave conocida (secuencial)
-./des_seq decrypt -i cipher.bin -o plano_recuperado.txt -k 42
+---
 
+## 🧪 Casos de Prueba
 
-### 3) Búsqueda por fuerza bruta (secuencial)
-# Busca en el rango [start, end] e imprime la primera llave encontrada
-./des_seq bruteforce -i cipher.bin -kw "es una prueba de" -s 0 -e 1000000
+| Tipo | Llave | Comando |
+|------|-------|---------|
+| **Fácil** | 10000 | `./des_seq encrypt -i texto.txt -o cipher.bin -k 10000` |
+| **Media** | 500000 | `./des_seq encrypt -i texto.txt -o cipher.bin -k 500000` |
+| **Difícil** | 900000 | `./des_seq encrypt -i texto.txt -o cipher.bin -k 900000` |
 
+Luego ejecutar brute force con:
+```bash
+# Secuencial
+./des_seq bruteforce -i cipher.bin -kw "ABCXYZ123" -s 0 -e 1000000
 
-### 4) Búsqueda por fuerza bruta (MPI)
-# Divide equitativamente el rango [s,e] entre np procesos; cualquier proceso que encuentre la llave
-# notifica a los demás para detener la búsqueda (stop cooperativo).
-mpirun -np 4 ./des_mpi -i cipher.bin -kw "es una prueba de" -s 0 -e 1000000
+# Paralelo (4 procesos)
+mpirun -np 4 ./des_mpi -i cipher.bin -kw "ABCXYZ123" -s 0 -e 1000000
+```
 
+---
 
-## Parámetros
-- `-i <path>`: archivo de entrada. En `encrypt`, es el texto plano. En `decrypt` y `bruteforce`, es el binario cifrado.
-- `-o <path>`: archivo de salida (opcional en `bruteforce`).
-- `-k <uint64>`: llave (entero no negativo). Para DES se usan 8 bytes; aquí extendemos el entero a 64 bits.
-- `-kw "frase"`: palabra/frase clave a buscar dentro del texto descifrado.
-- `-s <uint64>` `-e <uint64>`: rango de búsqueda (inclusive).
+## 📊 Resultados Esperados
 
+| Llave | T_seq (s) | T_par (4 proc) | Speedup |
+|-------|-----------|----------------|---------|
+| 10000 | ~0.01 | ~0.04 | 0.25x |
+| 500000 | ~0.45 | ~0.18 | 2.5x |
+| 900000 | ~0.88 | ~0.31 | 2.84x |
 
-## Notas de portabilidad
-- macOS: OpenSSL es *keg-only*.
-- Exporta PKG_CONFIG_PATH: `export PKG_CONFIG_PATH=$(brew --prefix openssl@3)/lib/pkgconfig`.
-- O ajusta `OPENSSL_INC` y `OPENSSL_LIB` en el Makefile.
-- Linux: usualmente `pkg-config` resuelve `-lcrypto` sin cambios.
+**Fórmula Speedup:**  
+`S = T_secuencial / T_paralelo`
 
+---
 
-## Metodología de medición
-- Ejecutar con `-np 4` y el texto: `Esta es una prueba de proyecto 2`.
-- Palabra clave: `es una prueba de`.
-- Probar llaves: `123456`, `(2^56)/4` y `(2^56)/4 + 1` (adaptando rangos para ensayo). Registre tiempos.
+## 📂 Estructura
+
+```
+project-paralela-2/
+├── des_seq.c          # Versión secuencial
+├── des_mpi.c          # Versión paralela
+├── crypto_utils.c/h   # Funciones DES
+├── Makefile
+└── README.md
+```
+
+---
+
+## 🧠 Conclusión
+
+- **Llaves fáciles**: Overhead MPI > beneficio paralelo
+- **Llaves difíciles**: Speedup significativo (hasta 2.8x con 4 procesos)
