@@ -241,7 +241,6 @@ int main(int argc, char **argv)
             printf("[bruteforce] Llaves probadas ~ %llu\n", tested_keys);
             printf("[bruteforce] Velocidad aprox: %.2f llaves/seg\n", keys_per_sec);
             printf("[bruteforce] Tiempo total (secuencial): %.6f s\n", elapsed);
-            printf("[bruteforce] => Usa este tiempo como T_seq para comparar con MPI.\n");
 
             free(found_plain);
             return 0;
@@ -253,7 +252,6 @@ int main(int argc, char **argv)
             printf("[bruteforce] Llaves probadas ~ %llu\n", tested_keys);
             printf("[bruteforce] Velocidad aprox: %.2f llaves/seg\n", keys_per_sec);
             printf("[bruteforce] Tiempo total (secuencial): %.6f s\n", elapsed);
-            printf("[bruteforce] => Usa este tiempo como T_seq para comparar con MPI.\n");
 
             return 3;
         }

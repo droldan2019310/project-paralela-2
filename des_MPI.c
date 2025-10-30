@@ -263,7 +263,6 @@ int main(int argc, char **argv)
         printf("[MPI] Velocidad paralela aprox: %.2f llaves/seg (global)\n",
                keys_per_sec_parallel);
 
-        printf("[MPI] => Usa este tiempo como T_par(%d). Compara con T_seq del modo secuencial para sacar speedup.\n", size);
         printf("[MPI] Resultado: podemos recuperar el texto cifrado sin conocer la llave original.\n");
     }
 
