@@ -84,15 +84,18 @@
     {\LARGE \textbf{sobre Cifrado DES}}\\[1.5cm]
     
     {\large \textbf{Curso:} Computación Paralela y Distribuida}\\[0.3cm]
-    {\large \textbf{Profesor:} [Nombre del Profesor]}\\[1cm]
     
     {\large \textbf{Integrantes:}}\\[0.2cm]
-    {\large Andy Fuentes - [Carné]}\\
-    {\large Davis Roldan - [Carné]}\\
-    {\large Diederich Solis - [Carné]}\\[1.5cm]
+    {\large Andy Fuentes - [22944]}\\
+    {\large Davis Roldan - [22672]}\\
+    {\large Diederich Solis - [22952]}\\[1.5cm]
     
     {\large \textbf{Fecha:} \today}\\[0.5cm]
     {\large \textbf{Semestre:} 2, 2025}
+
+      {\large \textbf{Repositorio:}}\\[0.2cm]
+    \href{https://github.com/droldan2019310/project-paralela-2.git}{\texttt{https://github.com/droldan2019310/project-paralela-2.git}}
+
     
     \vfill
 \end{titlepage}
@@ -291,21 +294,12 @@ Esta distribución garantiza que:
 \subsubsection{Comunicación MPI}
 
 \begin{figure}[H]
-\centering
-% Insertar aquí un diagrama del patrón de comunicación MPI
-% El diagrama debe mostrar:
-% - Rank 0 (Maestro) en el centro
-% - Ranks 1, 2, ..., N como trabajadores
-% - Flechas de Broadcast desde Rank 0 hacia todos los workers
-% - Flechas de Allreduce desde workers hacia Rank 0
-
-\vspace{4cm} % Espacio reservado para la imagen del diagrama MPI
-
-\textbf{[AQUÍ INSERTAR DIAGRAMA DE COMUNICACIÓN MPI]}
-
-\caption{Patrón de comunicación MPI para distribución y recolección de resultados}
-\label{fig:mpi-comm}
+    \centering
+    \includegraphics[width=0.8\textwidth]{mpi_comm_diagram.png}
+    \caption{Patrón de comunicación MPI para distribución y recolección de resultados}
+    \label{fig:mpi-comm}
 \end{figure}
+
 
 \section{Resultados Experimentales}
 
